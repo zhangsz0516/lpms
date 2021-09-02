@@ -84,7 +84,7 @@ static void pm_sleep(uint8_t sleep_mode)
 }
 
 /* lpms change system frequency enter */
-static void pm_set_freq(uint8_t freq_mode)
+void _pm_set_freq(uint8_t freq_mode)
 {
     if (_pm_sys.ops->set_freq != NULL)
         _pm_sys.ops->set_freq(freq_mode);
@@ -130,10 +130,29 @@ void pm_sleep_release(uint16_t module_id, uint8_t mode)
     pm_irq_enable(level);
 }
 
+/* 决策频率模式 */
+uint8_t select_freq_mode(void)
+{
+    uint8_t index;
+    uint16_t len;
+
+    for (index = 0; index < PM_FREQ_MODE_MAX -1; index++)
+    {
+        for (len = 0; len < ((PM_MODULE_MAX + 31) / 32); len++)
+        {
+            if (_pm_sys.freq_status[index][len] != 0x00)
+                return index;
+        }
+    }
+
+    return PM_FREQ_LOW; /* 默认运行低频 */
+}
+
 /* 频率模式请求：一般向高频率方向请求 */
 void pm_freq_request(uint16_t module_id, uint8_t mode)
 {
     uint32_t level;
+    uint8_t cur_mode;
 
     if (module_id >= PM_MODULE_MAX)
     {
@@ -147,6 +166,12 @@ void pm_freq_request(uint16_t module_id, uint8_t mode)
 
     level = pm_irq_disable();
     _pm_sys.freq_status[mode][module_id / 32] |= 1 << (module_id % 32);
+    cur_mode = select_freq_mode();
+    if (mode < cur_mode) /* 请求高频 */
+    {
+        _pm_set_freq(mode); /* 进行升频动作 */
+        _pm_sys.freq_mode = mode; /* 更新系统频率模式 */
+    }
     pm_irq_enable(level);
 }
 
@@ -228,7 +253,7 @@ static uint8_t select_sleep_mode(void)
         }
     }
 
-    return PM_SLEEP_DEEP;
+    return PM_SLEEP_DEEP;  /* 默认深睡眠 */
 }
 
 uint8_t pm_get_sleep_mode(void)
@@ -239,24 +264,6 @@ uint8_t pm_get_sleep_mode(void)
 uint8_t pm_get_freq_mode(void)
 {
     return _pm_sys.freq_mode;
-}
-
-/* 决策频率模式 */
-static uint8_t select_freq_mode(void)
-{
-    uint8_t index;
-    uint16_t len;
-
-    for (index = 0; index < PM_FREQ_MODE_MAX -1; index++)
-    {
-        for (len = 0; len < ((PM_MODULE_MAX + 31) / 32); len++)
-        {
-            if (_pm_sys.freq_status[index][len] != 0x00)
-                return index;
-        }
-    }
-
-    return PM_SLEEP_DEEP;
 }
 
 /* 检查【忙】状态 */
@@ -352,6 +359,21 @@ static uint8_t pm_is_enabled(void)
     return _pm_sys.enable_flag;
 }
 
+/* 运行PM 变频机制*/
+static void pm_freq_handle(void)
+{
+    uint8_t freq_mode;
+
+    freq_mode = select_freq_mode();
+
+    /* 如果当前的频率不等于决策的频率，运行决策的频率 */
+    if (freq_mode != _pm_sys.freq_mode)
+    {
+        _pm_set_freq(freq_mode);
+        _pm_sys.freq_mode = freq_mode;
+    }
+}
+
 /* 运行PM Tickless 机制*/
 void pm_run_tickless(void)
 {
@@ -412,6 +434,9 @@ void pm_run_tickless(void)
             pm_set_tick(pm_get_tick() + delta_tick); /* 系统systick补偿 */
         }
     }
+
+    /* 变频机制 */
+    pm_freq_handle();
 
     pm_irq_enable(level);
 }

@@ -1,0 +1,25 @@
+menu "LPMS Low Power Managemen System"
+
+    config LPMS_ENABLE
+        bool "LPMS enable"
+        default n
+
+    if LPMS_ENABLE
+        config BSP_USING_LPTIM
+            bool "LPMS enable lptimer"
+            default n
+
+        config LPMS_ENABLE_SLEEP
+            bool "LPMS enable sleep"
+            default n
+
+        config LPMS_ENABLE_FREQ
+            bool "LPMS enable freq"
+            default n
+
+        config LPMS_ENABLE_DELAY
+            bool "LPMS enable delay"
+            default n
+    endif
+
+endmenu
