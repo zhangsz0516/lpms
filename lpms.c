@@ -330,15 +330,15 @@ void pm_busy_mode_dump(void)
     PM_PRINT("+------------+--------------+\n");
 }
 
-void lpms_init(const struct lpms_ops *ops, uint8_t sleep_mode, uint8_t freq_mode)
+void lpms_init(const struct lpms_ops *ops)
 {
     if (_pm_sys.init_flag)
         return;
 
     _pm_sys.init_flag = 0x01;
     _pm_sys.enable_flag = 0x00; /* 默认不工作 */
-    _pm_sys.sleep_mode = sleep_mode;
-    _pm_sys.freq_mode = freq_mode;
+    _pm_sys.sleep_mode = PM_SLEEP_DEEP;
+    _pm_sys.freq_mode = PM_FREQ_LOW;
     _pm_sys.timeout = 0x00;
     _pm_sys.module_id = PM_MODULE_MAX;
     _pm_sys.ops = ops;
@@ -354,7 +354,7 @@ void lpms_disable(void)
     _pm_sys.enable_flag = 0x00;
 }
 
-static uint8_t pm_is_enabled(void)
+uint8_t pm_is_enabled(void)
 {
     return _pm_sys.enable_flag;
 }

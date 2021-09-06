@@ -16,14 +16,6 @@
 #include <stdlib.h>
 #include <board.h>
 
-#ifndef LPMS_DEFAULT_SLEEP_MODE
-#define LPMS_DEFAULT_SLEEP_MODE     PM_SLEEP_NONE
-#endif
-
-#ifndef LPMS_DEFAULT_FREQ_MODE
-#define LPMS_DEFAULT_FREQ_MODE      PM_FREQ_NORMAL
-#endif
-
 /* 【命令】睡眠模式请求 */
 static void pms_sleep_request(int argc, char **argv)
 {
@@ -155,6 +147,7 @@ MSH_CMD_EXPORT(pms_dump_busy_mode, pms dump busy status);
 
 static void pms_dump_mode(void)
 {
+    rt_kprintf("pms_enable=%d\n", pm_is_enabled());
     rt_kprintf("sleep_mode=%d\n", pm_get_sleep_mode());
     rt_kprintf("freq_mode=%d\n", pm_get_freq_mode());
 }
@@ -372,6 +365,6 @@ void lpms_drv_init(void)
         .irq_enable = pms_irq_enable,
     };
 
-    lpms_init(&pm_ops, LPMS_DEFAULT_SLEEP_MODE, LPMS_DEFAULT_FREQ_MODE);
+    lpms_init(&pm_ops);
     rt_thread_idle_sethook(lpms_enter);
 }

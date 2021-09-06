@@ -86,7 +86,7 @@ void pm_freq_release(uint16_t module_id, uint8_t mode);
 void pm_busy_set(uint16_t module_id, uint32_t ticks);
 void pm_busy_clear(uint16_t module_id);
 
-void lpms_init(const struct lpms_ops *ops, uint8_t sleep_mode, uint8_t freq_mode);
+void lpms_init(const struct lpms_ops *ops);
 void lpms_enable(void);
 void lpms_disable(void);
 
@@ -100,6 +100,8 @@ uint8_t pm_get_freq_mode(void);
 /* 【忙】状态打印 */
 void pm_busy_mode_dump(void);
 
+/* lpms是否使能 */
+uint8_t pm_is_enabled(void);
 void pm_run_tickless(void);
 
 #endif
