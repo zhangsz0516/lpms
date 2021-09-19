@@ -12,6 +12,6 @@
 
 #include <lpms.h>
 
-void lpms_drv_init(void);
+int lpms_drv_init(void);
 
 #endif

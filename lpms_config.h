@@ -20,7 +20,7 @@
 #define PM_PRINT(fmt, ...)
 #endif
 
-/* user power modules */
+/* modules ids for sleep and frequency */
 typedef enum {
     PM_NONE_ID = 0,
     PM_POWER_ID,
@@ -40,6 +40,13 @@ typedef enum {
     PM_KEY_ID,
     PM_TP_ID,
     PM_MODULE_MAX, /* lpms need */
-}lpms_module_t;
+}lpms_module_sleep_e;
+
+/* modules ids for time delay sleep*/
+typedef enum {
+    PMD_NONE_ID = 0,
+    PM_BUSY_KEY,
+    PM_BUSY_MODULE_MAX, /* lpms need */
+}lpms_delay_module_e;
 
 #endif

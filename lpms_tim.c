@@ -8,7 +8,7 @@
  * 2021-08-29     zhangsz         first version
  */
 #include <board.h>
-#include <lpms_drv.h>
+#include <pms.h>
 
 static LPTIM_HandleTypeDef LptimHandle;
 

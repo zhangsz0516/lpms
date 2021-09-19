@@ -7,6 +7,7 @@ cwd = GetCurrentDir()
 # add general drivers
 src = Split('''
 lpms.c
+lpms_notify.c
 lpms_drv.c
 lpms_tim.c
 ''')

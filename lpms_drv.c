@@ -8,13 +8,20 @@
  * 2021-08-29     zhangsz         first version
  */
 #include <lpms.h>
-#include <lpms_drv.h>
+#include <pms.h>
 #include <lpms_tim.h>
 
 #include <rtthread.h>
 #include <rthw.h>
 #include <stdlib.h>
 #include <board.h>
+
+#if IDLE_THREAD_STACK_SIZE <= 256
+    #error "[lpms.c] ERR! IDLE Stack Size Too Small!"
+#endif
+#ifndef PMS_DEFAULT_FREQ_MODE
+#define PMS_DEFAULT_FREQ_MODE       PM_FREQ_HIGH
+#endif
 
 /* 【命令】睡眠模式请求 */
 static void pms_sleep_request(int argc, char **argv)
@@ -147,11 +154,21 @@ MSH_CMD_EXPORT(pms_dump_busy_mode, pms dump busy status);
 
 static void pms_dump_mode(void)
 {
+    pm_sleep_mode_dump();
+    pm_freq_mode_dump();
+    pm_busy_mode_dump();
     rt_kprintf("pms_enable=%d\n", pm_is_enabled());
     rt_kprintf("sleep_mode=%d\n", pm_get_sleep_mode());
     rt_kprintf("freq_mode=%d\n", pm_get_freq_mode());
 }
 MSH_CMD_EXPORT(pms_dump_mode, pms dump sleep and freq mode);
+
+static void pms_dump_size(void)
+{
+    rt_kprintf("sizeof(struct _lpms_s) = %d\n", sizeof(lpms_sys_t));
+}
+MSH_CMD_EXPORT(pms_dump_size, pms_dump size);
+
 /* PM管理入口 */
 void lpms_enter(void)
 {
@@ -240,7 +257,6 @@ static void sleep(uint8_t mode)
         break;
 
     default:
-        RT_ASSERT(0);
         break;
     }
 }
@@ -349,22 +365,31 @@ static void pm_tick_set(uint32_t ticks)
     SET_BIT(SCB->ICSR, SCB_ICSR_PENDSTSET_Msk);
 }
 
-void lpms_drv_init(void)
+static void stm32_set_freq(uint8_t mode)
+{
+}
+
+int lpms_drv_init(void)
 {
     static const struct lpms_ops pm_ops =
     {
         .sleep = sleep,
-        .set_freq = NULL,
+        .set_freq = stm32_set_freq,
         .lptim_start = pm_timer_start,
         .lptim_stop = pm_timer_stop,
-        .lptim_get_timeout = pm_timer_get_tick,
+        .lptim_get_tick = pm_timer_get_tick,
         .systick_get = rt_tick_get,
         .systick_set = pm_tick_set,
         .systick_next_timeout = rt_timer_next_timeout_tick,
+        .lptim_next_timeout = RT_NULL,
         .irq_disable = pms_irq_disable,
         .irq_enable = pms_irq_enable,
     };
 
-    lpms_init(&pm_ops);
+    lpms_init(&pm_ops, PMS_DEFAULT_FREQ_MODE);
     rt_thread_idle_sethook(lpms_enter);
+
+    return 0;
 }
+
+INIT_DEVICE_EXPORT(lpms_drv_init);
